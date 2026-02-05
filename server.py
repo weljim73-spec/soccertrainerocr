@@ -42,16 +42,18 @@ def index():
 @app.route("/config", methods=["GET"])
 def get_config():
     """Return client configuration"""
-    return jsonify({
-        "api_key_mode": API_KEY_MODE,
-        "max_file_size": MAX_FILE_SIZE,
-        "max_files": MAX_FILES,
-        "session_type_limits": {
-            "speed_agility": {"max": 2, "description": "Speed & Agility: 1-2 images"},
-            "ball_work": {"max": 4, "description": "Ball Work: 1-4 images"},
-            "match": {"max": MAX_FILES, "description": "Match: Multiple images (typically 11)"}
+    return jsonify(
+        {
+            "api_key_mode": API_KEY_MODE,
+            "max_file_size": MAX_FILE_SIZE,
+            "max_files": MAX_FILES,
+            "session_type_limits": {
+                "speed_agility": {"max": 2, "description": "Speed & Agility: 1-2 images"},
+                "ball_work": {"max": 4, "description": "Ball Work: 1-4 images"},
+                "match": {"max": MAX_FILES, "description": "Match: Multiple images (typically 11)"},
+            },
         }
-    })
+    )
 
 
 def validate_session_type(client, files, claimed_type):
@@ -83,10 +85,12 @@ def validate_session_type(client, files, claimed_type):
         if file.filename.lower().endswith(".png"):
             media_type = "image/png"
 
-        validation_content.append({
-            "type": "image",
-            "source": {"type": "base64", "media_type": media_type, "data": image_data}
-        })
+        validation_content.append(
+            {
+                "type": "image",
+                "source": {"type": "base64", "media_type": media_type, "data": image_data},
+            }
+        )
 
     # Add validation prompt
     validation_prompt = """Analyze these soccer training session screenshots and identify the session type.
@@ -128,7 +132,7 @@ If uncertain, add "uncertain:" prefix (e.g., "uncertain: Match")"""
         message = client.messages.create(
             model="claude-3-haiku-20240307",
             max_tokens=50,
-            messages=[{"role": "user", "content": validation_content}]
+            messages=[{"role": "user", "content": validation_content}],
         )
 
         response = message.content[0].text.strip()
@@ -150,7 +154,9 @@ If uncertain, add "uncertain:" prefix (e.g., "uncertain: Match")"""
         is_valid = detected_type == claimed_type.lower()
         confidence = "uncertain" if is_uncertain else "confident"
 
-        print(f"[INFO] Validation result - detected: {detected_type}, valid: {is_valid}, confidence: {confidence}")
+        print(
+            f"[INFO] Validation result - detected: {detected_type}, valid: {is_valid}, confidence: {confidence}"
+        )
         return is_valid, detected_type, confidence
 
     except Exception as e:
@@ -188,10 +194,15 @@ def process_images():
             max_for_type = session_type_limits[session_type]
             if len(files) > max_for_type:
                 type_display = session_type.replace("_", " ").title()
-                return jsonify({
-                    "error": f"{type_display} sessions should have at most {max_for_type} images. "
-                             f"You uploaded {len(files)}. Please check your session type selection."
-                }), 400
+                return (
+                    jsonify(
+                        {
+                            "error": f"{type_display} sessions should have at most {max_for_type} images. "
+                            f"You uploaded {len(files)}. Please check your session type selection."
+                        }
+                    ),
+                    400,
+                )
 
         # Validate file sizes
         for file in files:
@@ -228,13 +239,14 @@ def process_images():
             # Special case: Match sessions include all Ball Work metrics, so Ball Work detection might be expected
             # Only block if we're confident AND it's not a Match/Ball Work confusion
             is_match_ballwork_confusion = (
-                (session_type == "match" and detected_type == "ball_work") or
-                (session_type == "ball_work" and detected_type == "match")
-            )
+                session_type == "match" and detected_type == "ball_work"
+            ) or (session_type == "ball_work" and detected_type == "match")
 
             if confidence == "uncertain" or is_match_ballwork_confusion:
                 # Allow uncertain matches or Match/Ball Work confusion to proceed
-                print(f"[WARNING] Validation uncertain or Match/Ball Work overlap - detected: {detected_type}, claimed: {session_type}, proceeding with user's selection")
+                print(
+                    f"[WARNING] Validation uncertain or Match/Ball Work overlap - detected: {detected_type}, claimed: {session_type}, proceeding with user's selection"
+                )
             else:
                 # Only block if we're confident and it's a clear mismatch (e.g., Speed & Agility vs Match)
                 display_detected = detected_type.replace("_", " ").title()
@@ -248,7 +260,9 @@ def process_images():
                 return jsonify({"error": error_msg}), 400
 
         elif confidence == "uncertain":
-            print(f"[WARNING] Session type detection was uncertain, proceeding with user's selection")
+            print(
+                f"[WARNING] Session type detection was uncertain, proceeding with user's selection"
+            )
 
         # Create detailed prompt based on session type - ask for JSON directly
         if session_type == "match":
