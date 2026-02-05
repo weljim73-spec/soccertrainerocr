@@ -28,8 +28,7 @@ app = Flask(__name__)
 
 # Production: restrict origins, Development: allow all
 if FLASK_ENV == 'production':
-    # TODO: Update with actual Render URL after first deploy
-    CORS(app, origins=["https://your-app-name.onrender.com"])
+    CORS(app, origins=["https://soccertrainerocr.onrender.com"])
 else:
     CORS(app)
 
