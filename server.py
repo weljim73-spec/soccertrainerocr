@@ -42,9 +42,16 @@ def index():
 @app.route("/config", methods=["GET"])
 def get_config():
     """Return client configuration"""
-    return jsonify(
-        {"api_key_mode": API_KEY_MODE, "max_file_size": MAX_FILE_SIZE, "max_files": MAX_FILES}
-    )
+    return jsonify({
+        "api_key_mode": API_KEY_MODE,
+        "max_file_size": MAX_FILE_SIZE,
+        "max_files": MAX_FILES,
+        "session_type_limits": {
+            "speed_agility": {"max": 2, "description": "Speed & Agility: 1-2 images"},
+            "ball_work": {"max": 4, "description": "Ball Work: 1-4 images"},
+            "match": {"max": MAX_FILES, "description": "Match: Multiple images (typically 11)"}
+        }
+    })
 
 
 def validate_session_type(client, files, claimed_type):
@@ -168,6 +175,22 @@ def process_images():
         # Validate file count
         if len(files) > MAX_FILES:
             return jsonify({"error": f"Too many files. Maximum {MAX_FILES} allowed"}), 400
+
+        # Validate session-type-specific image count (signature validation)
+        session_type_limits = {
+            "speed_agility": 2,
+            "ball_work": 4,
+            # Match sessions can have many images (no strict limit beyond MAX_FILES)
+        }
+
+        if session_type in session_type_limits:
+            max_for_type = session_type_limits[session_type]
+            if len(files) > max_for_type:
+                type_display = session_type.replace("_", " ").title()
+                return jsonify({
+                    "error": f"{type_display} sessions should have at most {max_for_type} images. "
+                             f"You uploaded {len(files)}. Please check your session type selection."
+                }), 400
 
         # Validate file sizes
         for file in files:
