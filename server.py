@@ -85,46 +85,131 @@ def process_images():
         # Initialize Anthropic client
         client = anthropic.Anthropic(api_key=api_key)
 
-        # Create detailed prompt based on session type
+        # Create detailed prompt based on session type - ask for JSON directly
         if session_type == "match":
-            extraction_prompt = """Extract all data from this soccer training/match session screenshot. Include ALL fields you can find:
+            extraction_prompt = """Extract all data from these soccer match session screenshots and return as a single JSON object. Look across ALL images to find these fields. Return ONLY valid JSON, no other text.
 
-Session: date, time of day, duration, opponent team name
-Overview: position played, goals, assists, team scores
-Skills: two-footed score, dribbling score, first touch score, agility score, speed score, power score
-Highlights: work rate (yd/min), ball possessions, total distance (mi), sprint distance (yd), top speed (mph), kicking power (mph)
-Two-Footed: left foot touches (#, %), right foot touches (#, %), left foot releases (#, %), right foot releases (#, %), left foot receives (#, %), right foot receives (#, %), left kicking power (mph), right kicking power (mph)
-Dribbling: distance with ball (yd), top speed with ball (mph), intense turns with ball
-First Touch: one-touch possessions, multiple-touch possessions, total duration (sec), ball release footzone (laces, inside, other)
-Agility: left turns, back turns, right turns, intense turns, average turn entry speed (mph), average turn exit speed (mph)
-Speed: top speed (mph), number of sprints
-Power: first step accelerations, intense accelerations
+Required format:
+{
+  "date": "YYYY-MM-DD",
+  "session_name": "Date + time of day",
+  "duration_minutes": number,
+  "position": "2-3 letter position code (like RM, CM, LW)",
+  "goals": number,
+  "assists": number,
+  "athlete_team_score": number (athlete's team score),
+  "opposing_team_score": number (opponent's team score),
+  "opposing_team_name": "opponent name",
+  "two_footed_score": number,
+  "dribbling_score": number,
+  "first_touch_score": number,
+  "agility_score": number,
+  "speed_score": number,
+  "power_score": number or null,
+  "work_rate": number (yd/min),
+  "ball_possessions": number,
+  "total_distance": number (miles),
+  "sprint_distance": number (yards),
+  "top_speed": number (mph),
+  "kicking_power": number (mph),
+  "left_touches": number,
+  "left_touches_pct": number,
+  "right_touches": number,
+  "right_touches_pct": number,
+  "left_releases": number,
+  "left_releases_pct": number,
+  "right_releases": number,
+  "right_releases_pct": number,
+  "left_receives": number,
+  "left_receives_pct": number,
+  "right_receives": number,
+  "right_receives_pct": number,
+  "left_kicking_power": number (mph),
+  "right_kicking_power": number (mph),
+  "distance_with_ball": number (yards),
+  "top_speed_with_ball": number (mph),
+  "intense_turns_with_ball": number,
+  "one_touch_poss": number,
+  "multiple_touch_poss": number,
+  "total_duration_sec": number,
+  "laces": number,
+  "inside": number,
+  "other_footzone": number,
+  "left_turns": number,
+  "back_turns": number,
+  "right_turns": number,
+  "intense_turns": number,
+  "avg_turn_entry": number (mph),
+  "avg_turn_exit": number (mph),
+  "num_sprints": number,
+  "first_step_accel": number,
+  "intense_accel": number
+}
 
-Extract ALL text, labels, numbers, and values exactly as shown."""
+Return only the JSON object with all available fields. Use null for missing values."""
         elif session_type == "ball_work":
-            extraction_prompt = """Extract all data from this soccer ball work session screenshot. Include ALL fields:
+            extraction_prompt = """Extract all data from these soccer ball work session screenshots and return as JSON. Return ONLY valid JSON.
 
-Session: date, time, duration, training type, intensity
-Highlights: ball touches, total distance (mi), sprint distance (yd), accl/decl, kicking power (mph)
-Two-Footed: left/right touches (#, %), left/right releases (#, %), left/right kicking power (mph)
-Speed: top speed (mph), sprints
-Agility: left/back/right/intense turns, avg turn entry/exit speeds (mph)
-
-Extract ALL text exactly as shown."""
+Required format:
+{
+  "date": "YYYY-MM-DD",
+  "session_name": "Date + time",
+  "duration_minutes": number,
+  "training_type": "Technical/Physical/Tactical",
+  "intensity": "Low/Moderate/High",
+  "ball_touches": number,
+  "total_distance": number (miles),
+  "sprint_distance": number (yards),
+  "accelerations": number,
+  "kicking_power": number (mph),
+  "left_touches": number,
+  "left_pct": number,
+  "right_touches": number,
+  "right_pct": number,
+  "left_releases": number,
+  "left_release_pct": number,
+  "right_releases": number,
+  "right_release_pct": number,
+  "left_kicking_power": number (mph),
+  "right_kicking_power": number (mph),
+  "top_speed": number (mph),
+  "num_sprints": number,
+  "left_turns": number,
+  "back_turns": number,
+  "right_turns": number,
+  "intense_turns": number,
+  "avg_turn_entry": number (mph),
+  "avg_turn_exit": number (mph)
+}"""
         else:  # speed_agility
-            extraction_prompt = """Extract all data from this speed & agility session screenshot. Include ALL fields:
+            extraction_prompt = """Extract all data from these speed & agility session screenshots and return as JSON. Return ONLY valid JSON.
 
-Session: date, time, duration, training type, intensity
-Highlights: total distance (mi), sprint distance (yd), accl/decl
-Speed: top speed (mph), number of sprints
-Agility: left/back/right/intense turns, avg turn entry/exit speeds (mph)
+Required format:
+{
+  "date": "YYYY-MM-DD",
+  "session_name": "Date + time",
+  "duration_minutes": number,
+  "training_type": "Physical",
+  "intensity": "Low/Moderate/High",
+  "total_distance": number (miles),
+  "sprint_distance": number (yards),
+  "accelerations": number,
+  "top_speed": number (mph),
+  "num_sprints": number,
+  "left_turns": number,
+  "back_turns": number,
+  "right_turns": number,
+  "intense_turns": number,
+  "avg_turn_entry": number (mph),
+  "avg_turn_exit": number (mph)
+}"""
 
-Extract ALL text exactly as shown."""
+        # Build content with all images + extraction prompt
+        content = []
 
-        # Process each image and extract text
-        ocr_texts = []
+        # Add all images first
         for i, file in enumerate(files):
-            print(f"[INFO] Processing image {i+1}/{len(files)}: {file.filename}")
+            print(f"[INFO] Preparing image {i+1}/{len(files)}: {file.filename}")
             image_data = base64.standard_b64encode(file.read()).decode('utf-8')
 
             # Determine media type
@@ -132,46 +217,61 @@ Extract ALL text exactly as shown."""
             if file.filename.lower().endswith('.png'):
                 media_type = 'image/png'
 
-            # Call Claude Vision API
-            print(f"[INFO] Calling Claude API for image {i+1}...")
-            message = client.messages.create(
-                model="claude-3-haiku-20240307",  # Claude 3 Haiku - fast and available!
-                max_tokens=2048,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": image_data
-                            }
-                        },
-                        {
-                            "type": "text",
-                            "text": extraction_prompt
-                        }
-                    ]
-                }]
-            )
+            content.append({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": media_type,
+                    "data": image_data
+                }
+            })
 
-            ocr_text = message.content[0].text
-            print(f"[INFO] OCR extracted {len(ocr_text)} characters")
-            ocr_texts.append(ocr_text)
+        # Add extraction prompt at the end
+        content.append({
+            "type": "text",
+            "text": extraction_prompt
+        })
 
-        # Combine all OCR text
-        combined_text = "\n\n".join(ocr_texts)
-        print(f"[INFO] Combined OCR text length: {len(combined_text)}")
+        # Call Claude Vision API with ALL images at once
+        print(f"[INFO] Calling Claude API with {len(files)} images...")
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",  # Use Sonnet for better JSON extraction
+            max_tokens=4096,
+            messages=[{
+                "role": "user",
+                "content": content
+            }]
+        )
 
-        # Extract structured data based on session type
-        print(f"[INFO] Extracting structured data for {session_type}...")
+        response_text = message.content[0].text
+        print(f"[INFO] Received response: {len(response_text)} characters")
+
+        # Parse JSON response directly
+        try:
+            # Extract JSON from response (handle if Claude adds any wrapper text)
+            import json
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
+            if json_start >= 0 and json_end > json_start:
+                json_str = response_text[json_start:json_end]
+                extracted_json = json.loads(json_str)
+                print(f"[SUCCESS] Extracted {len(extracted_json)} fields from JSON")
+            else:
+                print(f"[ERROR] No JSON found in response")
+                return jsonify({'error': 'Failed to extract JSON from response'}), 500
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] JSON parsing failed: {e}")
+            print(f"[ERROR] Response text: {response_text[:500]}")
+            return jsonify({'error': f'Invalid JSON response: {str(e)}'}), 500
+
+        # Format result based on session type (convert flat JSON to nested structure)
+        print(f"[INFO] Formatting result for {session_type}...")
         if session_type == 'ball_work':
-            result = extract_ball_work_data(combined_text)
+            result = format_ball_work_result(extracted_json)
         elif session_type == 'speed_agility':
-            result = extract_speed_agility_data(combined_text)
+            result = format_speed_agility_result(extracted_json)
         elif session_type == 'match':
-            result = extract_match_data(combined_text)
+            result = format_match_result(extracted_json)
         else:
             return jsonify({'error': 'Invalid session type'}), 400
 
@@ -179,7 +279,7 @@ Extract ALL text exactly as shown."""
         return jsonify({
             'success': True,
             'data': result,
-            'ocr_text': combined_text
+            'ocr_text': response_text
         })
 
     except anthropic.AuthenticationError as e:
@@ -585,6 +685,166 @@ def extract_value(text, pattern, default=None):
     if match:
         return match.group(1).capitalize()
     return default
+
+
+def format_match_result(data):
+    """Format flat JSON into nested Match structure"""
+    return {
+        "session": {
+            "session_name": data.get("session_name"),
+            "date": data.get("date"),
+            "duration_minutes": data.get("duration_minutes"),
+            "training_type": "Match"
+        },
+        "overview": {
+            "position": data.get("position"),
+            "goals": data.get("goals"),
+            "assists": data.get("assists"),
+            "athlete_team_score": data.get("athlete_team_score"),
+            "opposing_team_score": data.get("opposing_team_score"),
+            "opposing_team_name": data.get("opposing_team_name")
+        },
+        "skills": {
+            "two_footed_score": data.get("two_footed_score"),
+            "dribbling_score": data.get("dribbling_score"),
+            "first_touch_score": data.get("first_touch_score"),
+            "agility_score": data.get("agility_score"),
+            "speed_score": data.get("speed_score"),
+            "power_score": data.get("power_score")
+        },
+        "highlights": {
+            "work_rate_yd_per_min": data.get("work_rate"),
+            "ball_possessions": data.get("ball_possessions"),
+            "total_distance_mi": data.get("total_distance"),
+            "sprint_distance_yd": data.get("sprint_distance"),
+            "top_speed_mph": data.get("top_speed"),
+            "kicking_power_mph": data.get("kicking_power")
+        },
+        "two_footed": {
+            "left_foot_touches": data.get("left_touches"),
+            "left_foot_touches_pct": data.get("left_touches_pct"),
+            "right_foot_touches": data.get("right_touches"),
+            "right_foot_touches_pct": data.get("right_touches_pct"),
+            "left_foot_releases": data.get("left_releases"),
+            "left_foot_releases_pct": data.get("left_releases_pct"),
+            "right_foot_releases": data.get("right_releases"),
+            "right_foot_releases_pct": data.get("right_releases_pct"),
+            "left_foot_receives": data.get("left_receives"),
+            "left_foot_receives_pct": data.get("left_receives_pct"),
+            "right_foot_receives": data.get("right_receives"),
+            "right_foot_receives_pct": data.get("right_receives_pct"),
+            "left_foot_kicking_power_mph": data.get("left_kicking_power"),
+            "right_foot_kicking_power_mph": data.get("right_kicking_power")
+        },
+        "dribbling": {
+            "distance_with_ball_yd": data.get("distance_with_ball"),
+            "top_speed_with_ball_mph": data.get("top_speed_with_ball"),
+            "intense_turns_with_ball": data.get("intense_turns_with_ball")
+        },
+        "first_touch": {
+            "ball_possessions": {
+                "total": data.get("ball_possessions"),
+                "one_touch": data.get("one_touch_poss"),
+                "multiple_touch": data.get("multiple_touch_poss"),
+                "total_duration_sec": data.get("total_duration_sec")
+            },
+            "ball_release_footzone": {
+                "laces": data.get("laces"),
+                "inside": data.get("inside"),
+                "other": data.get("other_footzone")
+            }
+        },
+        "agility": {
+            "left_turns": data.get("left_turns"),
+            "back_turns": data.get("back_turns"),
+            "right_turns": data.get("right_turns"),
+            "intense_turns": data.get("intense_turns"),
+            "avg_turn_entry_speed_mph": data.get("avg_turn_entry"),
+            "avg_turn_exit_speed_mph": data.get("avg_turn_exit")
+        },
+        "speed": {
+            "top_speed_mph": data.get("top_speed"),
+            "sprints": data.get("num_sprints")
+        },
+        "power": {
+            "first_step_accelerations": data.get("first_step_accel"),
+            "intense_accelerations": data.get("intense_accel")
+        }
+    }
+
+
+def format_ball_work_result(data):
+    """Format flat JSON into nested Ball Work structure"""
+    return {
+        "session": {
+            "session_name": data.get("session_name"),
+            "date": data.get("date"),
+            "duration_minutes": data.get("duration_minutes"),
+            "training_type": data.get("training_type"),
+            "intensity": data.get("intensity")
+        },
+        "highlights": {
+            "ball_touches": data.get("ball_touches"),
+            "total_distance_miles": data.get("total_distance"),
+            "sprint_distance_yards": data.get("sprint_distance"),
+            "accl_decl": data.get("accelerations"),
+            "kicking_power_mph": data.get("kicking_power")
+        },
+        "two_footed": {
+            "left_foot_touches": data.get("left_touches"),
+            "left_foot_touches_percentage": data.get("left_pct"),
+            "right_foot_touches": data.get("right_touches"),
+            "right_foot_touches_percentage": data.get("right_pct"),
+            "left_foot_releases": data.get("left_releases"),
+            "left_foot_releases_percentage": data.get("left_release_pct"),
+            "right_foot_releases": data.get("right_releases"),
+            "right_foot_releases_percentage": data.get("right_release_pct"),
+            "left_foot_kicking_power_mph": data.get("left_kicking_power"),
+            "right_foot_kicking_power_mph": data.get("right_kicking_power")
+        },
+        "speed": {
+            "top_speed_mph": data.get("top_speed"),
+            "sprints": data.get("num_sprints")
+        },
+        "agility": {
+            "left_turns": data.get("left_turns"),
+            "back_turns": data.get("back_turns"),
+            "right_turns": data.get("right_turns"),
+            "intense_turns": data.get("intense_turns"),
+            "average_turn_entry_speed_mph": data.get("avg_turn_entry"),
+            "average_turn_exit_speed_mph": data.get("avg_turn_exit")
+        }
+    }
+
+
+def format_speed_agility_result(data):
+    """Format flat JSON into nested Speed & Agility structure"""
+    return {
+        "session": {
+            "session_name": data.get("session_name"),
+            "date": data.get("date"),
+            "duration_minutes": data.get("duration_minutes"),
+            "training_type": data.get("training_type"),
+            "intensity": data.get("intensity")
+        },
+        "highlights": {
+            "total_distance_miles": data.get("total_distance"),
+            "sprint_distance_yards": data.get("sprint_distance"),
+            "accl_decl": data.get("accelerations")
+        },
+        "speed": {
+            "top_speed_mph": data.get("top_speed"),
+            "sprints": data.get("num_sprints")
+        },
+        "agility": {
+            "left_turns": data.get("left_turns"),
+            "back_turns": data.get("back_turns"),
+            "right_turns": data.get("right_turns"),
+            "intense_turns": data.get("intense_turns"),
+            "average_turn_entry_speed_mph": data.get("avg_turn_entry"),
+            "average_turn_exit_speed_mph": data.get("avg_turn_exit")
+        }
+    }
 
 
 if __name__ == '__main__':
