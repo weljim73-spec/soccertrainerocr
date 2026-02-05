@@ -234,14 +234,28 @@ Required format:
 
         # Call Claude Vision API with ALL images at once
         print(f"[INFO] Calling Claude API with {len(files)} images...")
-        message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",  # Use Sonnet for better JSON extraction
-            max_tokens=4096,
-            messages=[{
-                "role": "user",
-                "content": content
-            }]
-        )
+        try:
+            message = client.messages.create(
+                model="claude-3-5-sonnet-20241022",  # Try Sonnet first for better extraction
+                max_tokens=4096,
+                messages=[{
+                    "role": "user",
+                    "content": content
+                }]
+            )
+            print(f"[INFO] Using Claude 3.5 Sonnet")
+        except Exception as e:
+            # Fallback to Haiku if Sonnet not available
+            print(f"[INFO] Sonnet not available ({str(e)}), falling back to Haiku")
+            message = client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=4096,
+                messages=[{
+                    "role": "user",
+                    "content": content
+                }]
+            )
+            print(f"[INFO] Using Claude 3 Haiku")
 
         response_text = message.content[0].text
         print(f"[INFO] Received response: {len(response_text)} characters")
