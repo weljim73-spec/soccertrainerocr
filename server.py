@@ -85,6 +85,42 @@ def process_images():
         # Initialize Anthropic client
         client = anthropic.Anthropic(api_key=api_key)
 
+        # Create detailed prompt based on session type
+        if session_type == "match":
+            extraction_prompt = """Extract all data from this soccer training/match session screenshot. Include ALL fields you can find:
+
+Session: date, time of day, duration, opponent team name
+Overview: position played, goals, assists, team scores
+Skills: two-footed score, dribbling score, first touch score, agility score, speed score, power score
+Highlights: work rate (yd/min), ball possessions, total distance (mi), sprint distance (yd), top speed (mph), kicking power (mph)
+Two-Footed: left foot touches (#, %), right foot touches (#, %), left foot releases (#, %), right foot releases (#, %), left foot receives (#, %), right foot receives (#, %), left kicking power (mph), right kicking power (mph)
+Dribbling: distance with ball (yd), top speed with ball (mph), intense turns with ball
+First Touch: one-touch possessions, multiple-touch possessions, total duration (sec), ball release footzone (laces, inside, other)
+Agility: left turns, back turns, right turns, intense turns, average turn entry speed (mph), average turn exit speed (mph)
+Speed: top speed (mph), number of sprints
+Power: first step accelerations, intense accelerations
+
+Extract ALL text, labels, numbers, and values exactly as shown."""
+        elif session_type == "ball_work":
+            extraction_prompt = """Extract all data from this soccer ball work session screenshot. Include ALL fields:
+
+Session: date, time, duration, training type, intensity
+Highlights: ball touches, total distance (mi), sprint distance (yd), accl/decl, kicking power (mph)
+Two-Footed: left/right touches (#, %), left/right releases (#, %), left/right kicking power (mph)
+Speed: top speed (mph), sprints
+Agility: left/back/right/intense turns, avg turn entry/exit speeds (mph)
+
+Extract ALL text exactly as shown."""
+        else:  # speed_agility
+            extraction_prompt = """Extract all data from this speed & agility session screenshot. Include ALL fields:
+
+Session: date, time, duration, training type, intensity
+Highlights: total distance (mi), sprint distance (yd), accl/decl
+Speed: top speed (mph), number of sprints
+Agility: left/back/right/intense turns, avg turn entry/exit speeds (mph)
+
+Extract ALL text exactly as shown."""
+
         # Process each image and extract text
         ocr_texts = []
         for i, file in enumerate(files):
@@ -114,7 +150,7 @@ def process_images():
                         },
                         {
                             "type": "text",
-                            "text": "Extract all text from this image. Include all numbers, labels, and values exactly as they appear."
+                            "text": extraction_prompt
                         }
                     ]
                 }]
