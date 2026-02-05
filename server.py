@@ -366,28 +366,38 @@ def extract_match_data(text):
     duration = extract_number(text_lower, r'(\d+)\s*min')
 
     # Match overview
-    position = extract_value(text, r'\bmin\s+([a-z]{1,3})\s+[o0]', default=None)
-    goals = extract_number(text_lower, r'[a-z]{1,3}\s+([o0\d]+)\s+[o0\d]+.*?goals')
-    assists = extract_number(text_lower, r'[a-z]{1,3}\s+[o0\d]+\s+([o0\d]+).*?assists')
-    athlete_score = extract_number(text_lower, r'athlete.*?(?:score|team)[:\s]*(\d+)')
-    opposing_score = extract_number(text_lower, r'oppos.*?(?:score|team)[:\s]*(\d+)')
-    opposing_team_name = extract_value(text, r'opponent[:\s]*([a-z0-9\s/]+)', default=None)
+    position = extract_value(text_lower, r'([a-z]{1,3})\s+position', default=None)
+    goals = extract_number(text_lower, r'goals\s+(\d+)')
+    assists = extract_number(text_lower, r'assists\s+(\d+)')
 
-    # Skills scores
-    two_footed = extract_number(text_lower, r'(?:skills|afternoon|20\d{2}).*?(\d+)\s*[-\s]+\d+.*?two[- ]?footed')
-    dribbling = extract_number(text_lower, r'(?:skills|afternoon|20\d{2}).*?\d+\s*[-\s]+(\d+)\s*[-\s]+.*?dribbling')
-    first_touch = extract_number(text_lower, r'(?:skills|afternoon|20\d{2}).*?\d+\s*[-\s]+\d+\s*[-\(\s]+(\d+).*?first\s+touch')
-    agility_score = extract_number(text_lower, r'(?<![:/\d])(\d{2})\s+\d+.*?agility')
-    speed_score = extract_number(text_lower, r'(?<![:/\d])\d{2}\s+(\d{2}).*?speed(?!\s+with)')
-    power_score = extract_number(text_lower, r'(?:power|strength)[:\s]*(\d+)')
+    # Team scores - looking for pattern like "cityplay fc 1 : 4 fc westlake"
+    score_match = re.search(r'(\d+)\s*:\s*(\d+)', text_lower)
+    if score_match:
+        athlete_score = int(score_match.group(1))
+        opposing_score = int(score_match.group(2))
+    else:
+        athlete_score = None
+        opposing_score = None
 
-    # Highlights
-    work_rate = extract_number(text_lower, r'work\s+rate[:\s]*(\d+\.?\d*)\s*yd')
-    ball_possessions = extract_number(text_lower, r'(?:ball\s+)?possessions?\s*[:\s#]*(\d+\.?\d*)')
-    total_distance = extract_number(text_lower, r'(?:total\s+)?distance[:\s]*(\d+\.?\d*)\s*(?:mi|ni)')
-    sprint_distance = extract_number(text_lower, r'sprint\s+distance[:\s]*(\d+\.?\d*)\s*(?:yd|yards|a4|ad)')
-    top_speed = extract_number(text_lower, r'top\s+speed(?!\s+with\s+ball)[:\s]*(\d+\.?\d*)\s*mph')
-    kicking_power = extract_number(text_lower, r'(?:kicking\s+)?power[:\s]*(\d+\.?\d*)\s*mph')
+    # Opponent name - text after the score pattern
+    opponent_match = re.search(r'\d+\s*:\s*\d+\s+(.+?)(?:\n|$)', text_lower)
+    opposing_team_name = opponent_match.group(1).strip() if opponent_match else None
+
+    # Skills scores - simpler patterns matching "two-footed 55" format
+    two_footed = extract_number(text_lower, r'two-?footed\s+(\d+)')
+    dribbling = extract_number(text_lower, r'dribbling\s+(\d+)')
+    first_touch = extract_number(text_lower, r'first\s+touch\s+(\d+)')
+    agility_score = extract_number(text_lower, r'agility\s+(\d+)')
+    speed_score = extract_number(text_lower, r'speed\s+(\d+)')
+    power_score = extract_number(text_lower, r'power\s+(\d+)')
+
+    # Highlights - simpler patterns matching actual format
+    work_rate = extract_number(text_lower, r'work\s+rate\s+([\d.]+)')
+    ball_possessions = extract_number(text_lower, r'ball\s+possessions\s+(\d+)')
+    total_distance = extract_number(text_lower, r'total\s+distance\s+([\d.]+)')
+    sprint_distance = extract_number(text_lower, r'sprint\s+distance\s+([\d.]+)')
+    top_speed = extract_number(text_lower, r'top\s+speed\s+([\d.]+)')
+    kicking_power = extract_number(text_lower, r'kicking\s+power\s+([\d.]+)')
 
     # Two-footed
     left_touches = extract_number(text_lower, r'left\s+foot[^:]*touch[^:]*[:\s]*(\d+)')
