@@ -91,34 +91,35 @@ def validate_session_type(client, files, claimed_type):
     # Add validation prompt
     validation_prompt = """Analyze these soccer training session screenshots and identify the session type.
 
-Look for these key indicators:
+CRITICAL: Match sessions include ALL the same metrics as Ball Work sessions PLUS game-specific information.
 
-**Match Session:**
-- Game overview section with opposing team name
-- Goals and assists scored by athlete
-- Team scores (athlete team vs opponent team)
-- Skill scores: Two-Footed, Dribbling, First Touch, Agility, Speed (usually shown as circular graphics with percentages)
-- Position played (e.g., FWD, MID, DEF)
+**Match Session (GAME):**
+MUST HAVE at least ONE of these game-specific indicators:
+- Opposing team name
+- Goals and assists scored
+- Team scores (e.g., "2-1" or "Team Score: 3, Opponent: 1")
+- Position played (FWD, MID, DEF, GK)
+- Skill scores shown as circular percentages (Two-Footed, Dribbling, First Touch)
 
-**Ball Work Session:**
-- Ball touches count (usually a prominent metric)
-- Kicking power (mph)
-- Left/right foot touches and percentages
-- Left/right releases and percentages
-- Focus on ball control and technical skills
+Match sessions will ALSO have ball work metrics like touches, kicking power, releases - don't let these fool you into thinking it's Ball Work!
+
+**Ball Work Session (TRAINING):**
+- Has ball touches, kicking power, left/right metrics
+- NO opposing team name
+- NO game scores or opponent
+- NO position played
+- NO skill score circles
 
 **Speed and Agility Session:**
-- Primary focus on movement metrics: distance, speed, sprints
-- Turn metrics: left turns, right turns, back turns, intense turns
-- Minimal or no ball-specific metrics
-- May show acceleration/deceleration counts
+- Focus on movement: distance, speed, sprints, turns
+- Minimal or no ball metrics
 
 Respond with ONLY one of these exact phrases:
-- "Match" (if this is a match/game session)
-- "Ball Work" (if this is a ball work training session)
-- "Speed and Agility" (if this is a speed and agility training session)
+- "Match" (if you see ANY game/opponent info)
+- "Ball Work" (if ONLY training metrics, no game info)
+- "Speed and Agility" (if movement-focused)
 
-If you're uncertain, add "uncertain:" before the type (e.g., "uncertain: Match")"""
+If uncertain, add "uncertain:" prefix (e.g., "uncertain: Match")"""
 
     validation_content.append({"type": "text", "text": validation_prompt})
 
@@ -224,18 +225,29 @@ def process_images():
         is_valid, detected_type, confidence = validate_session_type(client, files, session_type)
 
         if not is_valid:
-            # Format detected type for display
-            display_detected = detected_type.replace("_", " ").title()
-            display_claimed = session_type.replace("_", " ").title()
-
-            error_msg = (
-                f"Session type mismatch: Images appear to be '{display_detected}' "
-                f"but you selected '{display_claimed}'. Please verify your selection."
+            # Special case: Match sessions include all Ball Work metrics, so Ball Work detection might be expected
+            # Only block if we're confident AND it's not a Match/Ball Work confusion
+            is_match_ballwork_confusion = (
+                (session_type == "match" and detected_type == "ball_work") or
+                (session_type == "ball_work" and detected_type == "match")
             )
-            print(f"[ERROR] {error_msg}")
-            return jsonify({"error": error_msg}), 400
 
-        if confidence == "uncertain":
+            if confidence == "uncertain" or is_match_ballwork_confusion:
+                # Allow uncertain matches or Match/Ball Work confusion to proceed
+                print(f"[WARNING] Validation uncertain or Match/Ball Work overlap - detected: {detected_type}, claimed: {session_type}, proceeding with user's selection")
+            else:
+                # Only block if we're confident and it's a clear mismatch (e.g., Speed & Agility vs Match)
+                display_detected = detected_type.replace("_", " ").title()
+                display_claimed = session_type.replace("_", " ").title()
+
+                error_msg = (
+                    f"Session type mismatch: Images appear to be '{display_detected}' "
+                    f"but you selected '{display_claimed}'. Please verify your selection."
+                )
+                print(f"[ERROR] {error_msg}")
+                return jsonify({"error": error_msg}), 400
+
+        elif confidence == "uncertain":
             print(f"[WARNING] Session type detection was uncertain, proceeding with user's selection")
 
         # Create detailed prompt based on session type - ask for JSON directly
