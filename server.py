@@ -105,7 +105,7 @@ Required format:
   "first_touch_score": number,
   "agility_score": number,
   "speed_score": number,
-  "power_score": number or null,
+  "power_score": number or null (if shows "no data", use null or 0),
   "work_rate": number (yd/min),
   "ball_possessions": number,
   "total_distance": number (miles),
@@ -124,8 +124,8 @@ Required format:
   "left_receives_pct": number,
   "right_receives": number,
   "right_receives_pct": number,
-  "left_kicking_power": number (mph),
-  "right_kicking_power": number (mph),
+  "left_kicking_power": number (mph - look for "Left Foot Kicking Power" on two-footed detail screen),
+  "right_kicking_power": number (mph - look for "Right Foot Kicking Power" on two-footed detail screen),
   "distance_with_ball": number (yards),
   "top_speed_with_ball": number (mph),
   "intense_turns_with_ball": number,
@@ -141,7 +141,7 @@ Required format:
   "intense_turns": number,
   "avg_turn_entry": number (mph),
   "avg_turn_exit": number (mph),
-  "num_sprints": number,
+  "num_sprints": number (look for "Sprints" count, often shown with top speed),
   "first_step_accel": number,
   "intense_accel": number
 }
