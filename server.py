@@ -444,7 +444,18 @@ Required format:
             if json_start >= 0 and json_end > json_start:
                 json_str = response_text[json_start:json_end]
                 extracted_json = json.loads(json_str)
-                print(f"[SUCCESS] Extracted {len(extracted_json)} fields from JSON")
+                logger.info(f"[SUCCESS] Extracted {len(extracted_json)} fields from JSON")
+
+                # DEBUG: Log kicking power fields from Claude's response
+                logger.info(
+                    f"[CLAUDE JSON] left_kicking_power: {extracted_json.get('left_kicking_power')}"
+                )
+                logger.info(
+                    f"[CLAUDE JSON] right_kicking_power: {extracted_json.get('right_kicking_power')}"
+                )
+                logger.info(
+                    f"[CLAUDE JSON] kicking_power (max): {extracted_json.get('kicking_power')}"
+                )
             else:
                 print("[ERROR] No JSON found in response")
                 return jsonify({"error": "Failed to extract JSON from response"}), 500
