@@ -333,12 +333,12 @@ Required format:
 
 Return only the JSON object with all available fields. Use null for missing values."""
         elif session_type == "ball_work":
-            extraction_prompt = """Extract all data from these soccer ball work session screenshots and return as JSON. Return ONLY valid JSON.
+            extraction_prompt = """Extract all data from these soccer ball work session screenshots and return as a single JSON object. Look across ALL images to find these fields. Return ONLY valid JSON, no other text.
 
 Required format:
 {
   "date": "YYYY-MM-DD",
-  "session_name": "Date + time",
+  "session_name": "Date + time + team" (combine date/time text with team name below it, like "January 22, 2026 Afternoon - 15/14 White Training"),
   "duration_minutes": number,
   "training_type": "Technical/Physical/Tactical",
   "intensity": "Low/Moderate/High",
@@ -347,16 +347,16 @@ Required format:
   "sprint_distance": number (yards),
   "accelerations": number,
   "kicking_power": number (mph),
-  "left_touches": number,
-  "left_pct": number,
-  "right_touches": number,
-  "right_pct": number,
-  "left_releases": number,
-  "left_release_pct": number,
-  "right_releases": number,
-  "right_release_pct": number,
-  "left_kicking_power": number (mph),
-  "right_kicking_power": number (mph),
+  "left_touches": number (on Two-footed tab, left side under "Touch"),
+  "left_pct": number (percentage in parentheses),
+  "right_touches": number (on Two-footed tab, right side under "Touch"),
+  "right_pct": number (percentage in parentheses),
+  "left_releases": number (on Two-footed tab, left side under "Release"),
+  "left_release_pct": number (percentage in parentheses),
+  "right_releases": number (on Two-footed tab, right side under "Release"),
+  "right_release_pct": number (percentage in parentheses),
+  "left_kicking_power": number (mph - on Two-footed tab, left side under "Kicking power"),
+  "right_kicking_power": number (mph - on Two-footed tab, right side under "Kicking power"),
   "top_speed": number (mph),
   "num_sprints": number,
   "left_turns": number,
@@ -365,7 +365,9 @@ Required format:
   "intense_turns": number,
   "avg_turn_entry": number (mph),
   "avg_turn_exit": number (mph)
-}"""
+}
+
+Return only the JSON object with all available fields. Use null for missing values."""
         else:  # speed_agility
             extraction_prompt = """Extract all data from these speed & agility session screenshots and return as JSON. Return ONLY valid JSON.
 
