@@ -4,13 +4,14 @@ Soccer Session OCR Web Server
 Simple Flask server for processing training session images with Claude Vision API
 """
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import anthropic
 import base64
+import os
 import re
 from datetime import datetime
-import os
+
+import anthropic
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 
 # Configuration from environment
 API_KEY_MODE = os.environ.get("API_KEY_MODE", "user").lower()
@@ -261,7 +262,7 @@ def process_images():
 
         elif confidence == "uncertain":
             print(
-                f"[WARNING] Session type detection was uncertain, proceeding with user's selection"
+                "[WARNING] Session type detection was uncertain, proceeding with user's selection"
             )
 
         # Create detailed prompt based on session type - ask for JSON directly
@@ -516,16 +517,16 @@ def extract_ball_work_data(text):
     accl_decl = extract_number(text, r"accl\s*/\s*decl[:\s]*(\d+)")
     kicking_power = extract_number(text, r"kicking\s*power[:\s]*([\d.]+)")
 
-    # Two-footed
+    # Two-footed - More flexible patterns (with or without parentheses)
     left_touches = extract_number(text, r"left\s*foot[^:]*touch[^:]*[:\s]*(\d+)")
-    left_touches_pct = extract_number(text, r"left\s*foot[^:]*touch[^:]*\((\d+)%\)")
+    left_touches_pct = extract_number(text, r"left\s*foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?left.*?touch")
     right_touches = extract_number(text, r"right\s*foot[^:]*touch[^:]*[:\s]*(\d+)")
-    right_touches_pct = extract_number(text, r"right\s*foot[^:]*touch[^:]*\((\d+)%\)")
+    right_touches_pct = extract_number(text, r"right\s*foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?right.*?touch")
 
     left_releases = extract_number(text, r"left\s*foot[^:]*release[^:]*[:\s]*(\d+)")
-    left_releases_pct = extract_number(text, r"left\s*foot[^:]*release[^:]*\((\d+)%\)")
+    left_releases_pct = extract_number(text, r"left\s*foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?left.*?release")
     right_releases = extract_number(text, r"right\s*foot[^:]*release[^:]*[:\s]*(\d+)")
-    right_releases_pct = extract_number(text, r"right\s*foot[^:]*release[^:]*\((\d+)%\)")
+    right_releases_pct = extract_number(text, r"right\s*foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?right.*?release")
 
     left_kicking = extract_number(text, r"left\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
     right_kicking = extract_number(text, r"right\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
@@ -715,21 +716,21 @@ def extract_match_data(text):
     top_speed = extract_number(text_lower, r"top\s+speed\s+([\d.]+)")
     kicking_power = extract_number(text_lower, r"kicking\s+power\s+([\d.]+)")
 
-    # Two-footed
+    # Two-footed - More flexible patterns (with or without parentheses)
     left_touches = extract_number(text_lower, r"left\s+foot[^:]*touch[^:]*[:\s]*(\d+)")
-    left_touches_pct = extract_number(text_lower, r"left\s+foot[^:]*touch[^:]*\((\d+)%\)")
+    left_touches_pct = extract_number(text_lower, r"left\s+foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?left.*?touch")
     right_touches = extract_number(text_lower, r"right\s+foot[^:]*touch[^:]*[:\s]*(\d+)")
-    right_touches_pct = extract_number(text_lower, r"right\s+foot[^:]*touch[^:]*\((\d+)%\)")
+    right_touches_pct = extract_number(text_lower, r"right\s+foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?right.*?touch")
 
     left_releases = extract_number(text_lower, r"left\s+foot[^:]*release[^:]*[:\s]*(\d+)")
-    left_releases_pct = extract_number(text_lower, r"left\s+foot[^:]*release[^:]*\((\d+)%\)")
+    left_releases_pct = extract_number(text_lower, r"left\s+foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?left.*?release")
     right_releases = extract_number(text_lower, r"right\s+foot[^:]*release[^:]*[:\s]*(\d+)")
-    right_releases_pct = extract_number(text_lower, r"right\s+foot[^:]*release[^:]*\((\d+)%\)")
+    right_releases_pct = extract_number(text_lower, r"right\s+foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?right.*?release")
 
     left_receives = extract_number(text_lower, r"left\s+foot[^:]*receive[^:]*[:\s]*(\d+)")
-    left_receives_pct = extract_number(text_lower, r"left\s+foot[^:]*receive[^:]*\((\d+)%\)")
+    left_receives_pct = extract_number(text_lower, r"left\s+foot[^:]*receive[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?left.*?receive")
     right_receives = extract_number(text_lower, r"right\s+foot[^:]*receive[^:]*[:\s]*(\d+)")
-    right_receives_pct = extract_number(text_lower, r"right\s+foot[^:]*receive[^:]*\((\d+)%\)")
+    right_receives_pct = extract_number(text_lower, r"right\s+foot[^:]*receive[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?right.*?receive")
 
     left_kicking = extract_number(text_lower, r"left\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
     right_kicking = extract_number(text_lower, r"right\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
