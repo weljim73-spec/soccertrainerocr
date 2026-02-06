@@ -519,14 +519,22 @@ def extract_ball_work_data(text):
 
     # Two-footed - More flexible patterns (with or without parentheses)
     left_touches = extract_number(text, r"left\s*foot[^:]*touch[^:]*[:\s]*(\d+)")
-    left_touches_pct = extract_number(text, r"left\s*foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?left.*?touch")
+    left_touches_pct = extract_number(
+        text, r"left\s*foot[^:]*touch[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text, r"(\d+)%.*?left.*?touch")
     right_touches = extract_number(text, r"right\s*foot[^:]*touch[^:]*[:\s]*(\d+)")
-    right_touches_pct = extract_number(text, r"right\s*foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?right.*?touch")
+    right_touches_pct = extract_number(
+        text, r"right\s*foot[^:]*touch[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text, r"(\d+)%.*?right.*?touch")
 
     left_releases = extract_number(text, r"left\s*foot[^:]*release[^:]*[:\s]*(\d+)")
-    left_releases_pct = extract_number(text, r"left\s*foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?left.*?release")
+    left_releases_pct = extract_number(
+        text, r"left\s*foot[^:]*release[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text, r"(\d+)%.*?left.*?release")
     right_releases = extract_number(text, r"right\s*foot[^:]*release[^:]*[:\s]*(\d+)")
-    right_releases_pct = extract_number(text, r"right\s*foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text, r"(\d+)%.*?right.*?release")
+    right_releases_pct = extract_number(
+        text, r"right\s*foot[^:]*release[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text, r"(\d+)%.*?right.*?release")
 
     left_kicking = extract_number(text, r"left\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
     right_kicking = extract_number(text, r"right\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
@@ -718,19 +726,31 @@ def extract_match_data(text):
 
     # Two-footed - More flexible patterns (with or without parentheses)
     left_touches = extract_number(text_lower, r"left\s+foot[^:]*touch[^:]*[:\s]*(\d+)")
-    left_touches_pct = extract_number(text_lower, r"left\s+foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?left.*?touch")
+    left_touches_pct = extract_number(
+        text_lower, r"left\s+foot[^:]*touch[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text_lower, r"(\d+)%.*?left.*?touch")
     right_touches = extract_number(text_lower, r"right\s+foot[^:]*touch[^:]*[:\s]*(\d+)")
-    right_touches_pct = extract_number(text_lower, r"right\s+foot[^:]*touch[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?right.*?touch")
+    right_touches_pct = extract_number(
+        text_lower, r"right\s+foot[^:]*touch[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text_lower, r"(\d+)%.*?right.*?touch")
 
     left_releases = extract_number(text_lower, r"left\s+foot[^:]*release[^:]*[:\s]*(\d+)")
-    left_releases_pct = extract_number(text_lower, r"left\s+foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?left.*?release")
+    left_releases_pct = extract_number(
+        text_lower, r"left\s+foot[^:]*release[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text_lower, r"(\d+)%.*?left.*?release")
     right_releases = extract_number(text_lower, r"right\s+foot[^:]*release[^:]*[:\s]*(\d+)")
-    right_releases_pct = extract_number(text_lower, r"right\s+foot[^:]*release[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?right.*?release")
+    right_releases_pct = extract_number(
+        text_lower, r"right\s+foot[^:]*release[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text_lower, r"(\d+)%.*?right.*?release")
 
     left_receives = extract_number(text_lower, r"left\s+foot[^:]*receive[^:]*[:\s]*(\d+)")
-    left_receives_pct = extract_number(text_lower, r"left\s+foot[^:]*receive[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?left.*?receive")
+    left_receives_pct = extract_number(
+        text_lower, r"left\s+foot[^:]*receive[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text_lower, r"(\d+)%.*?left.*?receive")
     right_receives = extract_number(text_lower, r"right\s+foot[^:]*receive[^:]*[:\s]*(\d+)")
-    right_receives_pct = extract_number(text_lower, r"right\s+foot[^:]*receive[^:]*\(?(\d+)%\)?") or extract_number(text_lower, r"(\d+)%.*?right.*?receive")
+    right_receives_pct = extract_number(
+        text_lower, r"right\s+foot[^:]*receive[^:]*\(?(\d+)%\)?"
+    ) or extract_number(text_lower, r"(\d+)%.*?right.*?receive")
 
     left_kicking = extract_number(text_lower, r"left\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
     right_kicking = extract_number(text_lower, r"right\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
