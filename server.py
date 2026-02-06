@@ -548,6 +548,12 @@ def extract_ball_work_data(text):
         right_kicking = extract_number(text, r"right\s*foot[^:]*kicking[^:]*power[:\s]*([\d.]+)")
     if not right_kicking:
         right_kicking = extract_number(text, r"kicking\s*power[^:]*right[^:]*[:\s]*([\d.]+)")
+    if not right_kicking:
+        right_kicking = extract_number(text, r"right\s*kicking\s*power[:\s]*([\d.]+)")
+    if not right_kicking:
+        match = re.search(r"right.{0,20}?kicking.{0,20}?([\d.]+)", text, re.IGNORECASE | re.DOTALL)
+        if match:
+            right_kicking = float(match.group(1))
 
     # Speed
     top_speed = extract_number(text, r"top\s*speed[:\s]*([\d.]+)")
@@ -783,6 +789,16 @@ def extract_match_data(text):
         right_kicking = extract_number(
             text_lower, r"kicking\s*power[^:]*right[^:]*[:\s]*(\d+\.?\d*)"
         )
+    # Pattern 4: Try without "foot" - just "right kicking power"
+    if not right_kicking:
+        right_kicking = extract_number(text_lower, r"right\s*kicking\s*power[:\s]*(\d+\.?\d*)")
+    # Pattern 5: Super loose - any decimal number after "right" within 20 chars of "kicking"
+    if not right_kicking:
+        match = re.search(
+            r"right.{0,20}?kicking.{0,20}?(\d+\.\d+)", text_lower, re.IGNORECASE | re.DOTALL
+        )
+        if match:
+            right_kicking = float(match.group(1))
 
     # Dribbling
     distance_with_ball = extract_number(text_lower, r"distance\s+with\s+ball[:\s]*(\d+\.?\d*)\s*yd")
