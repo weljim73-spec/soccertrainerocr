@@ -5,6 +5,7 @@ Simple Flask server for processing training session images with Claude Vision AP
 """
 
 import base64
+import logging
 import os
 import re
 from datetime import datetime
@@ -12,6 +13,10 @@ from datetime import datetime
 import anthropic
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 # Configuration from environment
 API_KEY_MODE = os.environ.get("API_KEY_MODE", "user").lower()
@@ -537,6 +542,13 @@ def extract_ball_work_data(text):
     ) or extract_number(text, r"(\d+)%.*?right.*?release")
 
     # Kicking power - Multiple pattern attempts for robustness
+    # DEBUG: Log kicking power section
+    kicking_section_bw = re.search(
+        r".{0,100}kicking\s*power.{0,200}", text, re.IGNORECASE | re.DOTALL
+    )
+    if kicking_section_bw:
+        logger.info(f"[BALLWORK KICKING DEBUG] OCR text: {kicking_section_bw.group()}")
+
     left_kicking = extract_number(text, r"left\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
     if not left_kicking:
         left_kicking = extract_number(text, r"left\s*foot[^:]*kicking[^:]*power[:\s]*([\d.]+)")
@@ -554,6 +566,10 @@ def extract_ball_work_data(text):
         match = re.search(r"right.{0,20}?kicking.{0,20}?([\d.]+)", text, re.IGNORECASE | re.DOTALL)
         if match:
             right_kicking = float(match.group(1))
+
+    # DEBUG: Log extraction results
+    logger.info(f"[BALLWORK KICKING DEBUG] Left kicking power extracted: {left_kicking}")
+    logger.info(f"[BALLWORK KICKING DEBUG] Right kicking power extracted: {right_kicking}")
 
     # Speed
     top_speed = extract_number(text, r"top\s*speed[:\s]*([\d.]+)")
@@ -769,12 +785,12 @@ def extract_match_data(text):
     ) or extract_number(text_lower, r"(\d+)%.*?right.*?receive")
 
     # Kicking power - Multiple pattern attempts for robustness
-    # DEBUG: Print kicking power section
+    # DEBUG: Log kicking power section
     kicking_section = re.search(
         r".{0,100}kicking\s*power.{0,200}", text_lower, re.IGNORECASE | re.DOTALL
     )
     if kicking_section:
-        print(f"[DEBUG] Kicking power OCR text: {kicking_section.group()}")
+        logger.info(f"[KICKING DEBUG] OCR text: {kicking_section.group()}")
 
     # Pattern 1: Standard "left foot kicking power: 23.49 mph"
     left_kicking = extract_number(text_lower, r"left\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
@@ -807,9 +823,9 @@ def extract_match_data(text):
         if match:
             right_kicking = float(match.group(1))
 
-    # DEBUG: Print extraction results
-    print(f"[DEBUG] Left kicking power extracted: {left_kicking}")
-    print(f"[DEBUG] Right kicking power extracted: {right_kicking}")
+    # DEBUG: Log extraction results
+    logger.info(f"[KICKING DEBUG] Left kicking power extracted: {left_kicking}")
+    logger.info(f"[KICKING DEBUG] Right kicking power extracted: {right_kicking}")
 
     # Dribbling
     distance_with_ball = extract_number(text_lower, r"distance\s+with\s+ball[:\s]*(\d+\.?\d*)\s*yd")
