@@ -536,8 +536,18 @@ def extract_ball_work_data(text):
         text, r"right\s*foot[^:]*release[^:]*\(?(\d+)%\)?"
     ) or extract_number(text, r"(\d+)%.*?right.*?release")
 
+    # Kicking power - Multiple pattern attempts for robustness
     left_kicking = extract_number(text, r"left\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
+    if not left_kicking:
+        left_kicking = extract_number(text, r"left\s*foot[^:]*kicking[^:]*power[:\s]*([\d.]+)")
+    if not left_kicking:
+        left_kicking = extract_number(text, r"kicking\s*power[^:]*left[^:]*[:\s]*([\d.]+)")
+
     right_kicking = extract_number(text, r"right\s*foot\s*kicking\s*power[:\s]*([\d.]+)")
+    if not right_kicking:
+        right_kicking = extract_number(text, r"right\s*foot[^:]*kicking[^:]*power[:\s]*([\d.]+)")
+    if not right_kicking:
+        right_kicking = extract_number(text, r"kicking\s*power[^:]*right[^:]*[:\s]*([\d.]+)")
 
     # Speed
     top_speed = extract_number(text, r"top\s*speed[:\s]*([\d.]+)")
@@ -752,8 +762,27 @@ def extract_match_data(text):
         text_lower, r"right\s+foot[^:]*receive[^:]*\(?(\d+)%\)?"
     ) or extract_number(text_lower, r"(\d+)%.*?right.*?receive")
 
+    # Kicking power - Multiple pattern attempts for robustness
+    # Pattern 1: Standard "left foot kicking power: 23.49 mph"
     left_kicking = extract_number(text_lower, r"left\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
+    # Pattern 2: Try with optional "mph" and more flexible spacing
+    if not left_kicking:
+        left_kicking = extract_number(
+            text_lower, r"left\s*foot[^:]*kicking[^:]*power[:\s]*(\d+\.?\d*)"
+        )
+    # Pattern 3: Try reverse order "kicking power left foot"
+    if not left_kicking:
+        left_kicking = extract_number(text_lower, r"kicking\s*power[^:]*left[^:]*[:\s]*(\d+\.?\d*)")
+
     right_kicking = extract_number(text_lower, r"right\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
+    if not right_kicking:
+        right_kicking = extract_number(
+            text_lower, r"right\s*foot[^:]*kicking[^:]*power[:\s]*(\d+\.?\d*)"
+        )
+    if not right_kicking:
+        right_kicking = extract_number(
+            text_lower, r"kicking\s*power[^:]*right[^:]*[:\s]*(\d+\.?\d*)"
+        )
 
     # Dribbling
     distance_with_ball = extract_number(text_lower, r"distance\s+with\s+ball[:\s]*(\d+\.?\d*)\s*yd")
