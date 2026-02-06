@@ -769,6 +769,13 @@ def extract_match_data(text):
     ) or extract_number(text_lower, r"(\d+)%.*?right.*?receive")
 
     # Kicking power - Multiple pattern attempts for robustness
+    # DEBUG: Print kicking power section
+    kicking_section = re.search(
+        r".{0,100}kicking\s*power.{0,200}", text_lower, re.IGNORECASE | re.DOTALL
+    )
+    if kicking_section:
+        print(f"[DEBUG] Kicking power OCR text: {kicking_section.group()}")
+
     # Pattern 1: Standard "left foot kicking power: 23.49 mph"
     left_kicking = extract_number(text_lower, r"left\s+foot\s*kicking\s*power[:\s]*(\d+\.?\d*)")
     # Pattern 2: Try with optional "mph" and more flexible spacing
@@ -799,6 +806,10 @@ def extract_match_data(text):
         )
         if match:
             right_kicking = float(match.group(1))
+
+    # DEBUG: Print extraction results
+    print(f"[DEBUG] Left kicking power extracted: {left_kicking}")
+    print(f"[DEBUG] Right kicking power extracted: {right_kicking}")
 
     # Dribbling
     distance_with_ball = extract_number(text_lower, r"distance\s+with\s+ball[:\s]*(\d+\.?\d*)\s*yd")
