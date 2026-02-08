@@ -274,38 +274,29 @@ def process_images():
 
         # Create detailed prompt based on session type - ask for JSON directly
         if session_type == "match":
-            # Build athlete team context for the prompt
-            athlete_team_hint = ""
-            if athlete_team_name:
-                athlete_team_hint = f"""
-IMPORTANT - TEAM IDENTIFICATION:
-The athlete plays for "{athlete_team_name}". On the match overview screen, two team names are shown
-with a score between them (e.g. "Team A  1 : 2  Team B"). The team that is NOT "{athlete_team_name}"
-is the opponent. If neither name exactly matches "{athlete_team_name}", the athlete's team is
-typically shown on the right side next to the athlete's profile picture, or may appear as a
-shortened/different name for the same club. The OTHER team is always the opponent.
-"""
-            else:
-                athlete_team_hint = """
-IMPORTANT - TEAM IDENTIFICATION:
-On the match overview screen, two team names are shown with a score between them (e.g. "Team A  1 : 2  Team B").
-The athlete's team is typically shown on the RIGHT side (next to the athlete's profile picture).
-The team on the OTHER side is the opponent (opposing_team_name). Make sure to identify which team is
-the opponent correctly - it is NOT the athlete's own team.
-"""
-            extraction_prompt = f"""Extract all data from these soccer match session screenshots and return as a single JSON object. Look across ALL images to find these fields. Return ONLY valid JSON, no other text.
-{athlete_team_hint}
+            extraction_prompt = """Extract all data from these soccer match session screenshots and return as a single JSON object. Look across ALL images to find these fields. Return ONLY valid JSON, no other text.
+
+IMPORTANT - TEAM AND SCORE EXTRACTION:
+On the match overview screen, two team names are shown with a score between them, like:
+  "Team A   1 : 2   Team B"
+Extract BOTH team names and BOTH scores exactly as they appear left-to-right.
+- team_left = the team name shown on the LEFT side
+- team_right = the team name shown on the RIGHT side
+- score_left = the score number on the LEFT (belongs to team_left)
+- score_right = the score number on the RIGHT (belongs to team_right)
+
 Required format:
-{{
+{
   "date": "YYYY-MM-DD",
   "session_name": "Date + time of day",
   "duration_minutes": number,
   "position": "2-3 letter position code (like AM, RM, CM, LW, ST, CB, GK etc.) - look for this under the Duration on the match overview screen",
   "goals": number,
   "assists": number,
-  "athlete_team_score": number (the score for the athlete's team - NOT the opponent),
-  "opposing_team_score": number (the score for the opponent team),
-  "opposing_team_name": "the opponent team name (NOT the athlete's own team)",
+  "team_left": "team name on the LEFT side of the score",
+  "team_right": "team name on the RIGHT side of the score",
+  "score_left": number (score on the LEFT),
+  "score_right": number (score on the RIGHT),
   "two_footed_score": number,
   "dribbling_score": number,
   "first_touch_score": number,
@@ -350,7 +341,7 @@ Required format:
   "num_sprints": number (look for "Sprints" count, often shown with top speed),
   "first_step_accel": number,
   "intense_accel": number
-}}
+}
 
 Return only the JSON object with all available fields. Use null for missing values."""
         elif session_type == "ball_work":
@@ -1017,9 +1008,10 @@ def format_match_result(data):
             "position": data.get("position"),
             "goals": data.get("goals"),
             "assists": data.get("assists"),
-            "athlete_team_score": data.get("athlete_team_score"),
-            "opposing_team_score": data.get("opposing_team_score"),
-            "opposing_team_name": data.get("opposing_team_name"),
+            "team_left": data.get("team_left"),
+            "team_right": data.get("team_right"),
+            "score_left": data.get("score_left"),
+            "score_right": data.get("score_right"),
         },
         "skills": {
             "two_footed_score": data.get("two_footed_score"),
