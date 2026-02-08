@@ -242,16 +242,17 @@ def process_images():
         is_valid, detected_type, confidence = validate_session_type(client, files, session_type)
 
         if not is_valid:
-            # Special case: Match sessions include all Ball Work metrics, so Ball Work detection might be expected
-            # Only block if we're confident AND it's not a Match/Ball Work confusion
-            is_match_ballwork_confusion = (
-                session_type == "match" and detected_type == "ball_work"
-            ) or (session_type == "ball_work" and detected_type == "match")
+            # Allow confusion between session types that share many visual metrics
+            confused_pairs = {
+                frozenset({"match", "ball_work"}),
+                frozenset({"speed_agility", "ball_work"}),
+            }
+            is_known_confusion = frozenset({session_type, detected_type}) in confused_pairs
 
-            if confidence == "uncertain" or is_match_ballwork_confusion:
-                # Allow uncertain matches or Match/Ball Work confusion to proceed
+            if confidence == "uncertain" or is_known_confusion:
+                # Allow uncertain matches or known session type overlaps to proceed
                 print(
-                    f"[WARNING] Validation uncertain or Match/Ball Work overlap - detected: {detected_type}, claimed: {session_type}, proceeding with user's selection"
+                    f"[WARNING] Validation uncertain or known overlap - detected: {detected_type}, claimed: {session_type}, proceeding with user's selection"
                 )
             else:
                 # Only block if we're confident and it's a clear mismatch (e.g., Speed & Agility vs Match)
