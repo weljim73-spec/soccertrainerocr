@@ -176,7 +176,6 @@ def process_images():
     """Process uploaded images and extract session data"""
     try:
         session_type = request.form.get("session_type")
-        athlete_team_name = request.form.get("athlete_team_name", "")
         files = request.files.getlist("images")
 
         print(
